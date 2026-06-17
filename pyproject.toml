@@ -1,0 +1,12 @@
+[project]
+name = "call-me-for-youtube"
+version = "0.1.0"
+description = "Translate natural language prompts into function calls"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "numpy>=2.2.6",
+    "pydantic>=2.13.3",
+    "torch>=2.11.0",
+    "transformers>=5.6.2",
+]

@@ -1,0 +1,31 @@
+🚀 
+📂
+🤖
+🔤
+⚙️
+⏳
+✅
+❌
+✨
+⏱️
+📈
+🎯
+💾
+
+
+Constra🎯ined Decoding
+
+"STRICT SYSTEM RULE: Use ONLY a matching function from the list below.",
+"If NO function matches the user's intent (even if types match), set name: \"none\".",
+"Never use an unrelated function for a different task.",
+"",
+"Available functions:",
+
+
+Output ONLY valid JSON: {"name": "<fn>", "args": {<args>}}
+
+
+'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'
+'0123456789*_.,:-+/\'!?()[]{}"ĠĊ'
+
+[true, true, true, true, false, true, true] = false
