@@ -2,14 +2,6 @@
 
 # 🚀 Call Me Maybe: Constrained Function Calling
 
-<p align="center">
-  <img src="https://img.shields.io/badge/Python-3.10+-blue?style=for-the-badge&logo=python&logoColor=white" alt="Python Version">
-  <img src="https://img.shields.io/badge/Framework-42_Project-black?style=for-the-badge" alt="42 Project">
-  <img src="https://img.shields.io/badge/Reliability-99%25-green?style=for-the-badge" alt="Reliability">
-</p>
-
----
-
 ## 📝 Description
 **Call Me Maybe** is a high-performance bridge between natural language and structured machine-executable output. By leveraging **Constrained Decoding** on Small Language Models (SLMs) like Qwen-0.6B, we guarantee 100% parseable JSON function calls. 
 
@@ -54,7 +46,7 @@ make clean   # Cleanup cache and output
 ---
 
 ## 📂 Resources
-- 📜 [42 Subject: Call Me Maybe](file:///d:/elfing%20ring/Call_me_for_youtube/en.subject%20(1).pdf)
+
 - 🤖 [Qwen-0.6B Model Card](https://huggingface.co/Qwen/Qwen2.5-0.5B)
 - 🏗️ [Pydantic Validation](https://docs.pydantic.dev/)
 
