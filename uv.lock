@@ -39,7 +39,7 @@ wheels = [
 ]
 
 [[package]]
-name = "call-me-for-youtube"
+name = "call-me"
 version = "0.1.0"
 source = { virtual = "." }
 dependencies = [

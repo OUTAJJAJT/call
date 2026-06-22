@@ -1,4 +1,4 @@
-from typing import List, Set, Optional, Dict
+from typing import List, Set, Optional, Dict, cast
 from llm_sdk import Small_LLM_Model
 from src.models.functions_definiton import FunctionDefintion
 import json
@@ -61,7 +61,8 @@ def build_json_valid_ids(vocab: Dict[str, int]) -> Set[int]:
     """
     json_safe = set(
         'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'
-        '0123456789*_.,:-+/\'!?()[]{}"ĠĊ'
+        '0123456789*_.,:-+/\'!?()[]{}"ĠĊ\\'
+        + ' ' + '\n' + '\r' + '\t'
     )
     valid = set()
     for token_str, token_id in vocab.items():
@@ -84,7 +85,9 @@ def load_vocabulary(model: Small_LLM_Model) -> Dict[str, int]:
     with open(vocab_path, "r", encoding="utf-8") as f:
         tok_data = json.load(f)
     raw_vocab = tok_data.get("model", {}).get("vocab", {})
-    return raw_vocab
+    # tok_data comes from a JSON file; cast to the expected type so mypy
+    # treats it as a mapping of token string -> token id.
+    return cast(Dict[str, int], raw_vocab)
 
 
 def build_system_prompt(functions: List[FunctionDefintion]) -> str:

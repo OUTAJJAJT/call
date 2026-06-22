@@ -1,77 +1,89 @@
-import inspect
-import importlib.util
+# ABOUTME: Extracts function metadata (name, description, params, return type) for JSON export.
+# ABOUTME: Used to generate function definitions that students receive as input.
+
 import json
-import typing
-from typing import Dict, Any, List, get_type_hints
+from typing import Dict, List, Callable, get_type_hints
 
 from pydantic import BaseModel
 
+from moulinette.functions_definition import get_functions_by_visibility
+
+
+# Map Python types to JSON schema types
+TYPE_MAP = {
+    "int": "integer",
+    "float": "number",
+    "str": "string",
+    "bool": "boolean",
+    "list": "array",
+    "dict": "object",
+}
+
+
+class ParameterInfo(BaseModel):
+    type: str
+
+
 class FunctionInfo(BaseModel):
-    fn_name: str
-    args_names: list[str]
-    args_types: Dict[str, str]
-    return_type: str
+    name: str
+    description: str
+    parameters: Dict[str, ParameterInfo]
+    returns: ParameterInfo
 
 
-def extract_functions_infos(fn: Any) -> FunctionInfo:
+def extract_function_info(fn: Callable) -> FunctionInfo:
+    """Extract metadata from a function object including docstring."""
     # Get function name
-    fn_name = fn.__name__
+    name = fn.__name__
+
+    # Get docstring (first line only, strip whitespace)
+    description = ""
+    if fn.__doc__:
+        description = fn.__doc__.strip().split("\n")[0]
 
     # Get argument names from signature
     args_names = list(fn.__code__.co_varnames[:fn.__code__.co_argcount])
-    
+
     # Get type hints including return type
     type_hints = get_type_hints(fn)
-    
-    # Split into args types and return type
-    return_type = type_hints.pop('return').__name__
-    args_types = {k: v.__name__ for k,v in type_hints.items()}
+
+    # Get return type
+    return_type_raw = type_hints.pop('return', str).__name__
+    return_type = TYPE_MAP.get(return_type_raw, "string")
+
+    # Build parameters dict
+    parameters = {}
+    for arg_name in args_names:
+        if arg_name in type_hints:
+            type_raw = type_hints[arg_name].__name__
+            param_type = TYPE_MAP.get(type_raw, "string")
+            parameters[arg_name] = ParameterInfo(type=param_type)
 
     return FunctionInfo(
-        fn_name=fn_name,
-        args_names=args_names, 
-        args_types=args_types,
-        return_type=return_type
+        name=name,
+        description=description,
+        parameters=parameters,
+        returns=ParameterInfo(type=return_type)
     )
 
-def get_all_functions_from_module(module_path: str) -> List[FunctionInfo]:
-    """
-    Extract information about all functions defined in a module.
-    
-    Args:
-        module_path: Path to the Python module file
-        
-    Returns:
-        List of FunctionInfo objects for each function defined in the module
-    """
-    # Load module from path
-    spec = importlib.util.spec_from_file_location("dynamic_module", module_path)
-    if spec is None or spec.loader is None:
-        raise ImportError(f"Could not load module from {module_path}")
-    
-    module = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(module)
-
-    # Get all module members
-    members = inspect.getmembers(module)
-    
-    # Filter for functions defined in this module
-    functions = [
-        member[1] for member in members 
-        if inspect.isfunction(member[1]) 
-        and member[1].__module__ == "dynamic_module"
-    ]
-    return functions
-    
 
 def generate_function_calling_definition(
-    import_module_path: str,
     output_json_path: str,
+    visibility: str = "public",
 ) -> None:
-    all_functions = get_all_functions_from_module(import_module_path)
+    """Generate function definitions JSON file for a given visibility set.
 
-    function_infos = [extract_functions_infos(fn) for fn in all_functions]
+    Args:
+        output_json_path: Path where the JSON file will be written
+        visibility: Either "public" or "private" to filter functions
+    """
+    # Get functions filtered by visibility
+    functions = get_functions_by_visibility(visibility)
 
+    # Extract info from each function
+    function_infos = [extract_function_info(fn) for fn in functions]
+
+    # Convert to dict format for JSON
     function_infos_list = [fn.model_dump() for fn in function_infos]
 
     with open(output_json_path, "w") as f:

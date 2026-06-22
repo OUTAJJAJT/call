@@ -1,58 +1,35 @@
-import argparse
-from src.json_loader import load_function_definition, load_prompts
-from src.constrained_decoding import build_system_prompt
-from llm_sdk import Small_LLM_Model
-from src.constrained_decoding import (load_vocabulary,
-                                      build_json_valid_ids,
-                                      get_best_valid_token,
-                                      extract_complete_json)
 import time
 import json
 import os
+from src.parse_args import parse_args
+from src.args_processor import build_fn_param_types, cast_args
+from src.json_loader import load_function_definition, load_prompts
+from src.constrained_decoding import (build_system_prompt, load_vocabulary,
+                                      build_json_valid_ids,
+                                      get_best_valid_token,
+                                      extract_complete_json)
+from llm_sdk import Small_LLM_Model
 
 
-def parse_args() -> argparse.Namespace:
-    """
-    Parses command-line arguments for the function calling pipeline.
-
-    Returns:
-        argparse.Namespace: The parsed arguments including input/output paths
-        and model name.
-    """
-    parse = argparse.ArgumentParser(
-        description="Translate natural language prompts into function calls \
-using constrained decoding."
-    )
-
-    parse.add_argument(
-        "--input",
-        type=str,
-        default="data/input/function_calling_tests.json",
-        help="Path to the JSON file containing user prompts."
-    )
-
-    parse.add_argument(
-        "--functions_definition",
-        type=str,
-        default="data/input/functions_definition.json",
-        help="Path to the JSON file containing available function definitions."
-    )
-
-    parse.add_argument(
-        "--output",
-        type=str,
-        default="data/output/functions_results.json",
-        help="Path where the generated function calls will be saved."
-    )
-
-    parse.add_argument(
-        "--model",
-        type=str,
-        default="Qwen/Qwen3-0.6B",
-        help="Identifier of the model to use from Hugging Face."
-    )
-
-    return parse.parse_args()
+# def intent_matches_function(prompt: str, fn_name: str) -> bool:
+#     """
+#     Simple keyword-based heuristic to check whether the user's prompt
+#     intent matches the selected function name. Returns False when
+#     there is a clear mismatch so the caller can treat the prediction
+#     as "none".
+#     """
+#     p = prompt.lower()
+#     keywords = {
+#         "add": {"add", "sum", "plus"},
+#         "multiply": {"multiply", "times", "product"},
+#         "divide": {"divide", "divided", "quotient"},
+#         "sqrt": {"sqrt", "square root"},
+#     }
+#     for key, kws in keywords.items():
+#         if any(k in p for k in kws):
+#             return key in fn_name.lower()
+#     # If no strong keyword detected, accept the model's choice.
+#     return True
 
 
 def main() -> None:
@@ -77,6 +54,7 @@ def main() -> None:
         )
 
     system = build_system_prompt(functions)
+    fn_param_types = build_fn_param_types(functions)
 
     print(f"Loading model: {args.model}")
     try:
@@ -104,8 +82,7 @@ def main() -> None:
 
         # Pre-injecting the start of the JSON to guide the model
         all_generated.extend(model.encode('{"name": "')[0].tolist())
-
-        for _ in range(50):
+        for _ in range(150):
             logits = model.get_logits_from_input_ids(generated_ids +
                                                      all_generated)
             next_id = get_best_valid_token(logits, valid_ids)
@@ -122,18 +99,20 @@ def main() -> None:
         if not clean_json:
             parsed = {"name": "none", "args": {}}
 
-        raw_args = parsed.get("args", {})
+        # Enforce a simple intent->function consistency check. If the
+        # parsed function does not match detected keywords in the
+        # user's prompt, treat it as no match.
+        # if not intent_matches_function(prompt, parsed.get("name", "none")):
+        #     parsed = {"name": "none", "args": {}}
 
-        float_args = {}
-        for k, v in raw_args.items():
-            if isinstance(v, (int, float)):
-                float_args[k] = float(v)
-            else:
-                float_args[k] = v
+        raw_args = parsed.get("args", {})
+        param_types = fn_param_types.get(parsed.get("name", "none"), {})
+        typed_args = cast_args(raw_args, param_types)
+
         all_results.append({
             "prompt": prompt,
             "name": parsed.get("name", "none"),
-            "parameters": float_args
+            "parameters": typed_args
         })
 
         name = parsed.get("name", "none")
@@ -160,8 +139,8 @@ def main() -> None:
     print(f"Total time: {total_time:.2f} seconds")
     if prompts:
         print(f"Average per prompt: {total_time/len(prompts):.2f} seconds")
-        print(f"Success rate: {len(all_parsed_result)}/{len(prompts)} \
-({len(all_parsed_result)/len(prompts)*100:.2f}%)")
+        print(f"Success rate: {len(all_parsed_result)}/{len(prompts)}"
+              f" ({len(all_parsed_result)/len(prompts)*100:.2f}%)")
 
 
 if __name__ == "__main__":

@@ -99,7 +99,7 @@ class Small_LLM_Model:
         """
         if isinstance(ids, torch.Tensor):
             ids = ids.tolist()
-            if isinstance(ids[0], list): # Handle batch dim
+            if isinstance(ids[0], list):  # Handle batch dim
                 ids = ids[0]
         return self._tokenizer.decode(ids, skip_special_tokens=True)
 

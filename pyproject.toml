@@ -1,5 +1,5 @@
 [project]
-name = "call-me-for-youtube"
+name = "call-me"
 version = "0.1.0"
 description = "Translate natural language prompts into function calls"
 readme = "README.md"
