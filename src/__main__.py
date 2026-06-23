@@ -21,9 +21,8 @@ from llm_sdk import Small_LLM_Model
 #     p = prompt.lower()
 #     keywords = {
 #         "add": {"add", "sum", "plus"},
-#         "multiply": {"multiply", "times", "product"},
+#         "product": {"multiply", "times", "product"},
 #         "divide": {"divide", "divided", "quotient"},
-#         "sqrt": {"sqrt", "square root"},
 #     }
 #     for key, kws in keywords.items():
 #         if any(k in p for k in kws):
@@ -98,12 +97,11 @@ def main() -> None:
 
         if not clean_json:
             parsed = {"name": "none", "args": {}}
-
         # Enforce a simple intent->function consistency check. If the
         # parsed function does not match detected keywords in the
         # user's prompt, treat it as no match.
         # if not intent_matches_function(prompt, parsed.get("name", "none")):
-        #     parsed = {"name": "none", "args": {}}
+        #       parsed = {"name": "none", "args": {}}
 
         raw_args = parsed.get("args", {})
         param_types = fn_param_types.get(parsed.get("name", "none"), {})

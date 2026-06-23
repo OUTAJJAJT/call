@@ -53,7 +53,7 @@ def cast_args(
         if expected_type == "number":
             typed_args[k] = float(v)
         elif expected_type == "integer":
-            typed_args[k] = int(v)
+            typed_args[k] = (v)
         else:
             typed_args[k] = v
     return typed_args

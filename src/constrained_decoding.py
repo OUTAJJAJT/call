@@ -103,11 +103,13 @@ def build_system_prompt(functions: List[FunctionDefintion]) -> str:
         str: The formatted system prompt.
     """
     lines = [
-        "STRICT SYSTEM RULE: Use ONLY a matching\
-function from the list below.",
-        "If NO function matches the user's intent\
-(even if types match), set name: \"none\".",
-        "Never use an unrelated function for a different task.",
+        "STRICT FUNCTION-CALLING POLICY:",
+        "1) Select a function ONLY if the user's intent is an exact semantic match.",
+        "2) Never choose the closest/approximate function.",
+        "3) If intent is ambiguous, uncertain, or not explicitly supported, use name: \"none\".",
+        "4) Parameter type compatibility alone is NOT sufficient for selecting a function.",
+        "5) Never invent functions, parameters, or values not implied by the user request.",
+        "6) If no exact function matches, return {\"name\": \"none\", \"args\": {}}.",
         "",
         "Available functions:",
     ]
@@ -118,7 +120,9 @@ function from the list below.",
         )
         lines.append(f"  -{fn.name}({params}): {fn.description}")
 
-    lines.append('\nOutput ONLY valid JSON:\
-{"name": "<fn>", "args": {<args>}}')
+    lines.append("\nOutput format requirements:")
+    lines.append("- Output ONLY one JSON object (no prose, no markdown, no code fences).")
+    lines.append("- JSON schema: {\"name\": \"<fn-or-none>\", \"args\": {<args>}}")
+    lines.append("- If name is \"none\", args must be {}.")
 
     return "\n".join(lines)
